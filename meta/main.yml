@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  author: Brian Smith
+  description: Install and configure rbenv and ruby-build, and use rbenv to install one or more versions of Ruby.
+  license: MIT
+  min_ansible_version: 1.4
+  platforms:
+    - name: Ubuntu
+      versions:
+        - precise
+        - trusty
+  categories:
+    - development
+
+dependencies:
+  - Ansibles.build-essential
+  - Ansibles.git

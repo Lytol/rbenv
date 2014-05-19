@@ -1,0 +1,53 @@
+---
+
+- name: Install rbenv
+  sudo: yes
+  sudo_user: "{{ rbenv_user }}"
+  git: repo=git://github.com/sstephenson/rbenv.git dest=~/.rbenv
+
+- name: Add ~.rbenv/bin to PATH
+  sudo: yes
+  sudo_user: "{{ rbenv_user }}"
+  lineinfile: dest="~/.profile" line="export PATH=$HOME/.rbenv/bin:$PATH"
+
+- name: Eval rbenv init in ~/.profile
+  sudo: yes
+  sudo_user: "{{ rbenv_user }}"
+  lineinfile: dest="~/.profile" line="eval \"$(rbenv init -)\""
+
+- name: Install dependencies for ruby-build
+  apt: pkg={{ item }}
+  with_items:
+    - autoconf
+    - bison
+    - build-essential
+    - libssl-dev
+    - libyaml-dev
+    - libreadline6
+    - libreadline6-dev
+    - zlib1g
+    - zlib1g-dev
+
+- name: Install ruby-build as rbenv plugin
+  sudo: yes
+  sudo_user: "{{ rbenv_user }}"
+  git: repo=https://github.com/sstephenson/ruby-build.git dest=~/.rbenv/plugins/ruby-build
+
+- name: Check installed ruby versions
+  sudo : yes
+  sudo_user: "{{ rbenv_user }}"
+  command: "sudo -iu {{rbenv_user}} rbenv versions"
+  register: rbenv_installed_ruby_versions
+
+- name: Install ruby versions
+  sudo: yes
+  sudo_user: "{{ rbenv_user }}"
+  command: "sudo -iu {{rbenv_user}} rbenv install {{ item }}"
+  with_items: rbenv_ruby_versions
+  when: rbenv_installed_ruby_versions.stdout.find("{{ item }}") == -1
+
+- name: Set default ruby version
+  sudo: yes
+  sudo_user: "{{ rbenv_user }}"
+  command: "sudo -iu {{rbenv_user}} rbenv global {{ rbenv_ruby_default }}"
+  when: rbenv_ruby_default is defined

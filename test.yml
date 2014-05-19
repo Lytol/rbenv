@@ -1,0 +1,11 @@
+---
+- hosts: all
+  remote_user: vagrant
+  sudo: yes
+  vars:
+    rbenv_user: vagrant
+    rbenv_ruby_versions:
+      - 2.1.2
+    rbenv_ruby_default: 2.1.2
+  roles:
+    - rbenv

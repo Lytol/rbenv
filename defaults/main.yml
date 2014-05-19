@@ -1,0 +1,3 @@
+---
+rbenv_user: '{{ ansible_user_id }}'
+rbenv_ruby_versions: []
