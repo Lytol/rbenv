@@ -1,19 +1,54 @@
 ---
+- name: Create rbenv user
+  user: name={{ rbenv_user }} shell=/bin/bash
+  tags: rbenv
 
-- name: Install rbenv
+- name: Create rbenv directory {{ rbenv_root }}
+  file: >
+    path={{ rbenv_root }}
+    owner={{ rbenv_user }}
+    group={{ rbenv_user }}
+    mode=2755
+    state=directory
+  tags: rbenv
+
+- name: Install rbenv to {{ rbenv_root }}
+  git: repo=git://github.com/sstephenson/rbenv.git dest={{ rbenv_root }}
   sudo: yes
   sudo_user: "{{ rbenv_user }}"
-  git: repo=git://github.com/sstephenson/rbenv.git dest=~/.rbenv
+  tags: rbenv
 
-- name: Add ~.rbenv/bin to PATH
-  sudo: yes
-  sudo_user: "{{ rbenv_user }}"
-  lineinfile: dest="~/.profile" line="export PATH=$HOME/.rbenv/bin:$PATH"
+- name: Create shims directory
+  file: >
+    path={{ rbenv_root }}/shims
+    owner={{ rbenv_user }}
+    group={{ rbenv_user }}
+    mode=2755
+    state=directory
 
-- name: Eval rbenv init in ~/.profile
-  sudo: yes
-  sudo_user: "{{ rbenv_user }}"
-  lineinfile: dest="~/.profile" line="eval \"$(rbenv init -)\""
+- name: Create versions directory
+  file: >
+    path={{ rbenv_root }}/versions
+    owner={{ rbenv_user }}
+    group={{ rbenv_user }}
+    mode=2755
+    state=directory
+
+- name: Create plugins directory
+  file: >
+    path={{ rbenv_root }}/plugins
+    owner={{ rbenv_user }}
+    group={{ rbenv_user }}
+    mode=2755
+    state=directory
+
+- name: Install /etc/profile.d/rbenv.sh
+  template: >
+    src=rbenv.sh.j2
+    dest=/etc/profile.d/rbenv.sh
+    mode=644
+    owner=root
+    group=root
 
 - name: Install dependencies for ruby-build
   apt: pkg={{ item }}
@@ -27,27 +62,28 @@
     - libreadline6-dev
     - zlib1g
     - zlib1g-dev
+  tags: ruby-build
 
 - name: Install ruby-build as rbenv plugin
+  git: >
+    repo=https://github.com/sstephenson/ruby-build.git
+    dest={{ rbenv_root }}/plugins/ruby-build
   sudo: yes
   sudo_user: "{{ rbenv_user }}"
-  git: repo=https://github.com/sstephenson/ruby-build.git dest=~/.rbenv/plugins/ruby-build
+  tags: ruby-build
 
 - name: Check installed ruby versions
-  sudo : yes
-  sudo_user: "{{ rbenv_user }}"
-  command: "sudo -iu {{rbenv_user}} rbenv versions"
+  sudo: yes
+  shell: "sudo -iu {{rbenv_user}} rbenv versions"
   register: rbenv_installed_ruby_versions
 
 - name: Install ruby versions
   sudo: yes
-  sudo_user: "{{ rbenv_user }}"
   command: "sudo -iu {{rbenv_user}} rbenv install {{ item }}"
   with_items: rbenv_ruby_versions
   when: rbenv_installed_ruby_versions.stdout.find("{{ item }}") == -1
 
 - name: Set default ruby version
   sudo: yes
-  sudo_user: "{{ rbenv_user }}"
   command: "sudo -iu {{rbenv_user}} rbenv global {{ rbenv_ruby_default }}"
   when: rbenv_ruby_default is defined
