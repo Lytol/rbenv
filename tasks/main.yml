@@ -1,22 +1,24 @@
 ---
+- apt: name=git state=present
+
 - name: Create rbenv user
   user: name={{ rbenv_user }} shell=/bin/bash
-  tags: rbenv
 
-- name: Create rbenv directory {{ rbenv_root }}
+- name: Create rbenv directory
   file: >
     path={{ rbenv_root }}
     owner={{ rbenv_user }}
     group={{ rbenv_user }}
     mode=2755
     state=directory
-  tags: rbenv
 
-- name: Install rbenv to {{ rbenv_root }}
-  git: repo=git://github.com/sstephenson/rbenv.git dest={{ rbenv_root }}
+- name: Install rbenv
+  git: >
+    repo=git://github.com/sstephenson/rbenv.git
+    dest={{ rbenv_root }}
+    accept_hostkey=True
   sudo: yes
   sudo_user: "{{ rbenv_user }}"
-  tags: rbenv
 
 - name: Create shims directory
   file: >
@@ -62,20 +64,20 @@
     - libreadline6-dev
     - zlib1g
     - zlib1g-dev
-  tags: ruby-build
 
 - name: Install ruby-build as rbenv plugin
   git: >
     repo=https://github.com/sstephenson/ruby-build.git
     dest={{ rbenv_root }}/plugins/ruby-build
+    accept_hostkey=True
   sudo: yes
   sudo_user: "{{ rbenv_user }}"
-  tags: ruby-build
 
 - name: Check installed ruby versions
   sudo: yes
-  shell: "sudo -iu {{rbenv_user}} rbenv versions"
+  shell: "sudo -iu {{rbenv_user}} rbenv versions --bare"
   register: rbenv_installed_ruby_versions
+  changed_when: False
 
 - name: Install ruby versions
   sudo: yes
@@ -83,7 +85,26 @@
   with_items: rbenv_ruby_versions
   when: rbenv_installed_ruby_versions.stdout.find("{{ item }}") == -1
 
+- name: Check default ruby version
+  sudo: yes
+  shell: "sudo -iu {{rbenv_user}} rbenv global"
+  register: rbenv_installed_default_ruby_version
+  changed_when: False
+
 - name: Set default ruby version
   sudo: yes
-  command: "sudo -iu {{rbenv_user}} rbenv global {{ rbenv_ruby_default }}"
-  when: rbenv_ruby_default is defined
+  command: "sudo -iu {{rbenv_user}} rbenv global {{ rbenv_default_ruby_version }}"
+  when: rbenv_installed_default_ruby_version.stdout.find("{{ rbenv_default_ruby_version }}") == -1
+
+- name: Check installed bundler gem for ruby versions
+  sudo: yes
+  shell: "sudo -iu {{rbenv_user}} rbenv whence bundle"
+  register: rbenv_installed_bundler_versions
+  changed_when: False
+  ignore_errors: True
+
+- name: Install bundler gem for ruby versions
+  sudo: yes
+  command: "sudo -iu {{rbenv_user}} gem install bundler --no-ri --no-rdoc"
+  with_items: rbenv_ruby_versions
+  when: rbenv_installed_bundler_versions.stdout.find("{{ item }}") == -1

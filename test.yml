@@ -4,7 +4,7 @@
   sudo: yes
   vars:
     rbenv_ruby_versions:
-      - 2.1.2
-    rbenv_ruby_default: 2.1.2
+      - 2.1.5
+    rbenv_default_ruby_version: 2.1.5
   roles:
     - rbenv

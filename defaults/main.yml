@@ -1,4 +1,5 @@
 ---
-rbenv_user: rbenv
-rbenv_root: /opt/rbenv
+rbenv_user: "rbenv"
+rbenv_root: "/opt/rbenv"
 rbenv_ruby_versions: []
+rbenv_default_ruby_version: ""

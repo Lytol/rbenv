@@ -11,7 +11,4 @@ galaxy_info:
         - trusty
   categories:
     - development
-
-dependencies:
-  - Ansibles.build-essential
-  - Ansibles.git
+    - system
